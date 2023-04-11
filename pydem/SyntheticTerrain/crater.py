@@ -1,8 +1,9 @@
 """crater function"""
 import numpy as np
 from numpy.random import RandomState
-from ds import dsa
-from rock import rocky_terrain
+
+from .ds import dsa
+from .rock import rocky_terrain
 
 def crater_count(area: float, d: float, dmax: float, dmin: float, rng: RandomState=None) -> int:
     """return number of crater given size
@@ -128,3 +129,4 @@ def gen_crater(d: float, res: float, rng: RandomState=None):
     Z = Z_base + Z_rock
 
     return Z
+

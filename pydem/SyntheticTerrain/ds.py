@@ -2,7 +2,7 @@
 import numpy as np
 from numpy.random import RandomState
 from numba import njit
-from dem_tools.map.resize import grid_interpolate
+from ..util.resize import interpolate_bilinear2d
 
 
 def square_step(z, ns, w, l, rng):
@@ -106,7 +106,7 @@ def _diamond_step(z, ns, w, mi, noise):
 
 
 def dsa(height_map: np.ndarray, steps: int=5, hmax: float=None, rng: RandomState=None):
-    """Main looping function of diamond square algorithm.
+    """Main looping function of diamond square algorithm. 
 
     Args:
         height_map (np.ndarray): 2d array of initial height map but in refined resolution for adding small features
@@ -119,9 +119,9 @@ def dsa(height_map: np.ndarray, steps: int=5, hmax: float=None, rng: RandomState
     assert shape[0] == shape[1]
 
     # resize height map
-    new_shape = 2 ** steps + 1
-    if shape != new_shape:
-        height_map = grid_interpolate(height_map, size=new_shape, mode="bilinear")
+    dsa_shape = (2 ** steps + 1, 2 ** steps + 1)
+    if shape != dsa_shape:
+        height_map = interpolate_bilinear2d(height_map, shape[0], shape[1], np.zeros(dsa_shape), dsa_shape[0], dsa_shape[1])
 
     if hmax is None:
         hmax = np.min(height_map) + (np.max(height_map) - np.min(height_map)) * 1.1
@@ -140,7 +140,9 @@ def dsa(height_map: np.ndarray, steps: int=5, hmax: float=None, rng: RandomState
         ns *= 2
 
     # resize height map back
-    if shape != new_shape:
-        height_map = grid_interpolate(height_map, size=shape, mode="bilinear")
+    if shape != dsa_shape:
+        height_map = interpolate_bilinear2d(height_map, dsa_shape[0], dsa_shape[1], np.zeros(shape), shape[0], shape[1])
 
     return height_map
+
+

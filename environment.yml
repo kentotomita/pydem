@@ -1,4 +1,4 @@
-name: trr4hda
+name: pydem
 channels:
   - conda-forge
   - defaults
@@ -6,12 +6,12 @@ dependencies:
   - python=3.8
   - pip
   - numpy
-  - scipy
   - numba
-  - tqdm
   - matplotlib
   - pip:
+      - scipy
       - open3d
+      - pyglet
       - pyvista
       - trimesh[easy]
       - pyembree
