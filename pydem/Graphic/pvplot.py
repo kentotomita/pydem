@@ -34,19 +34,19 @@ def pvplot_dem(mesh:pv.PolyData, dem:np.ndarray, cmap='viridis'):
 
     pl = pv.Plotter()
     pl.add_mesh(mesh, texture=tex)
-
+    
     pl.add_axes()  # world axes arrows
     pl.show()
 
 
-def dem2texture(dem:np.ndarray, cmap:str='viridis')->pv.Texture:
+def dem2texture(dem:np.ndarray, cmap:str='viridis') -> pv.Texture:
     """Create PyVista texture object from DEM"""
     demcolored = dem2rgbimg(dem, cmap)
     tex = pv.numpy_to_texture(demcolored)
     return tex
 
 
-def demmesh_texture_coordinate(mesh: pv.PolyData):
+def demmesh_texture_coordinate(mesh: pv.PolyData) -> pv.PolyData:
     """Add texture coordinate to the DEM mesh. 
     PyVista mesh object is easily obtained by applying pv.wrap fuction; https://docs.pyvista.org/api/utilities/_autosummary/pyvista.wrap.html
     """
