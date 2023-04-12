@@ -43,6 +43,7 @@ except ImportError:
 
 # imports ---------------------------------------------------------------- #
 # from . import Dataloader
+from . import DataLoader
 from . import SyntheticTerrain
 from . import Geometry
 from . import Graphic
