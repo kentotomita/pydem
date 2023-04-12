@@ -1,6 +1,6 @@
 # Hard dependencies ----------------------------------------------------------- #
 # Let users know if they're missing any of our hard dependencies
-hard_dependencies = ("numpy", "numba", 'scipy', )
+hard_dependencies = ("numpy", "numba", 'scipy', 'matplotlib')
 
 missing_dependencies = []
 
@@ -18,7 +18,7 @@ del hard_dependencies, dependency, missing_dependencies
 
 
 # imports ---------------------------------------------------------------- #
-__extensions__ = {'open3d': False, 'trimesh': False,}
+__extensions__ = {'open3d': False, 'trimesh': False, 'pyvista': False}
 
 # open3d
 try:
@@ -34,7 +34,16 @@ try:
 except ImportError:
     pass
 
+# pyvista
+try:
+    from trimesh import __version__ as pyvista_ver
+    __extensions__['pyvista'] = True
+except ImportError:
+    pass
 
 # imports ---------------------------------------------------------------- #
+# from . import Dataloader
 from . import SyntheticTerrain
 from . import Geometry
+from . import Graphic
+from . import util
