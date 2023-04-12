@@ -21,5 +21,5 @@ if __name__=="__main__":
     y = np.linspace(0, 6.4, w)
     yy, xx = np.meshgrid(y, x)
 
-    mesh = gm.dem2mesh_tri(xx=xx, yy=yy, zz=dem)
+    mesh = gm.dem2boxmesh_tri(xx=xx, yy=yy, zz=dem)
     mesh.show()

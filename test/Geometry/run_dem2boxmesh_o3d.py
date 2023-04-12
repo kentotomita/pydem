@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import open3d as o3d
 
 import sys
 sys.path.append('../')
@@ -21,5 +22,6 @@ if __name__=="__main__":
     y = np.linspace(0, 6.4, w)
     yy, xx = np.meshgrid(y, x)
 
-    mesh = gm.dem2mesh_tri(xx=xx, yy=yy, zz=dem)
-    mesh.show()
+    mesh = gm.dem2boxmesh_o3d(xx=xx, yy=yy, zz=dem)
+    mesh.compute_vertex_normals()
+    o3d.visualization.draw_geometries([mesh])

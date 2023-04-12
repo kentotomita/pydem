@@ -12,16 +12,16 @@ if __name__=="__main__":
 
     #dem = st.gen_crater(d=50, res=1)
     #dem = st.dsa(np.random.random(size=(128, 128)))
-    dem = st.rocky_terrain(shape=(128, 128), res=0.1, k=0.4, dmax=2., dmin=0.2)
+    dem = st.rocky_terrain(shape=(128, 64), res=0.1, k=0.4, dmax=2., dmin=0.2)
 
     plt.imshow(dem)
     plt.show()
 
-    w, h = dem.shape
-    x = np.linspace(0, 50, w)
-    y = np.linspace(0, 50, h)
-    xx, yy = np.meshgrid(x, y)
+    h, w = dem.shape
+    x = np.linspace(0, 12.8, h)
+    y = np.linspace(0, 6.4, w)
+    yy, xx = np.meshgrid(y, x)
 
-    mesh = gm.dem2mesh_o3d(xx=xx, yy=yy, zz=dem, cuda=False)
+    mesh = gm.dem2mesh_o3d(xx=xx, yy=yy, zz=dem)
     mesh.compute_vertex_normals()
     o3d.visualization.draw_geometries([mesh])
