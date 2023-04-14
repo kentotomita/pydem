@@ -45,6 +45,7 @@ except ImportError:
 # from . import Dataloader
 from . import DataLoader
 from . import SyntheticTerrain
+from . import HazardDetection
 from . import Geometry
 from . import Graphic
 from . import util
