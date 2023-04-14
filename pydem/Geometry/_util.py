@@ -89,7 +89,8 @@ def _make_triangles(nr, nc, tri):
 
 
 
-@jit
+
+@jit(nopython=True, fastmath=True, nogil=True, cache=True, parallel=True)
 def _make_vertices(nr, nc, xx, yy, zz, vtc):
     """
     Args:
@@ -174,7 +175,8 @@ def _make_vertices(nr, nc, xx, yy, zz, vtc):
                 vtc[vid, 0] = x11
                 vtc[vid, 1] = y11
                 vtc[vid, 2] = z11
-    return copy.deepcopy(vtc)
+    #return copy.deepcopy(vtc)
+    return vtc
 
 
 # =================================================================
