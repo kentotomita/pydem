@@ -34,7 +34,7 @@ def pvplot_dem(mesh:pv.PolyData, dem:np.ndarray, cmap='viridis'):
 
     pl = pv.Plotter()
     pl.add_mesh(mesh, texture=tex)
-    
+
     pl.add_axes()  # world axes arrows
     pl.show()
 
