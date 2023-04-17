@@ -35,8 +35,9 @@ def dhd(
 
     Returns:
         fpmap (np.ndarray): footpad map
-        slope (np.ndarray): maximum slope map (rad)
-        rghns (np.ndarray): maximum roughness map (m)
+        site_slope (np.ndarray): slope (rad) for each landing site
+        site_rghns (np.ndarray): roughness for each landing site (m)
+        pix_rghns (np.ndarray): roughness for each pixel
         is_safe (np.ndarray): safety map
         indef (np.ndarray): indicates indefinite regions
     """
