@@ -1,5 +1,5 @@
 # PyDEM
-PyDEM is a python library for 3D processing and visualization, minimally designed for landing hazard detection. 
+PyDEM is a python library for 3D processing and visualization, minimally designed for landing hazard detection. It achieves fast computaion by utilizing [Numba: a high performance Python compiler](https://numba.pydata.org/).
 
 
 ## Installation
@@ -22,7 +22,7 @@ $ conda env create -f environment.yml
 
 <!-- USAGE EXAMPLES -->
 ## Quick Example 
-Here is a quick example of running probabilistic hazard detection algorithm of ALHAT (Autonomous Landing Hazard Avoidance Technology) project, [proposed by Ivanov et. al.](https://arc.aiaa.org/doi/pdf/10.2514/6.2013-5019). 
+Here is a quick example of running [probabilistic hazard detection algorithm](https://arc.aiaa.org/doi/pdf/10.2514/6.2013-5019)https://numba.pydata.org/ of ALHAT (Autonomous Landing Hazard Avoidance Technology) project. 
 You can also find a number of demo scripts in the `test` directory. 
 
 First import some python modules and subpackages within `pydem` as
