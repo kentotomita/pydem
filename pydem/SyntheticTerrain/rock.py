@@ -37,7 +37,7 @@ def rocky_terrain(shape, res=0.1, k=0.4, dmax=2, dmin=0.2, rng=None):
         loc = np.array([loc0, loc1]).transpose()
 
         # randomly generate rock parameters
-        params = rng.uniform([1, 1.5, -np.pi], [1, 1.5, np.pi], size=(n_rock, 3))
+        params = rng.uniform([1, 0.5, -np.pi], [1, 1.0, np.pi], size=(n_rock, 3))
 
         # generate rocks
         terrain = _place_rocks(shape=shape, res=res, d_list=ds, n_list=ns, loc=loc, params=params)

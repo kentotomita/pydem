@@ -2,6 +2,7 @@ from pydem import __extensions__
 
 from .dem2stl import *
 from ._util import *
+from .pcd2dem import *
 
 if (__extensions__['open3d']):
     from .dem2mesh_o3d import *
