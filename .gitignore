@@ -1,2 +1,6 @@
 __pycache__/
 data/
+*.png
+*.jpgf
+*.pdf
+*.gif
