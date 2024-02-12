@@ -1,3 +1,6 @@
 {
-    "terminal.integrated.env.osx": {"PYTHONPATH": "${workspaceFolder}"}
+    "terminal.integrated.env.osx": {
+        "PYTHONPATH": "${workspaceFolder}"
+    },
+    "julia.environmentPath": "c:\\Users\\ktomita3\\Documents\\001_workspace\\pydem"
 }
