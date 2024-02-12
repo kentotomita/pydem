@@ -1,4 +1,4 @@
-from pydem import __extensions__
+from .. import __extensions__
 
 from .demimg import *
 

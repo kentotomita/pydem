@@ -1,4 +1,4 @@
-from pydem import __extensions__
+from .. import __extensions__
 
 from .dem2stl import *
 from ._util import *
