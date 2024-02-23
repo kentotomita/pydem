@@ -62,8 +62,6 @@ def scan_dtm(dtm: Trimesh, src: np.ndarray, rays: np.ndarray, R_C2W: np.ndarray,
     rays = R_C2W @ rays.T
     rays = rays.T
 
-    print(rays.shape)
-
     # normalize rays
     rays = rays / np.linalg.norm(rays, axis=1).reshape(-1, 1)
 
