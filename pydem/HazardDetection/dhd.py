@@ -3,12 +3,12 @@ Deterministic Hazard Detection (DHD) algorithm for safety map generation.
 The algorithm is based on [ALHAT](https://arc.aiaa.org/doi/pdf/10.2514/6.2013-5019).
 """
 
-from numba import jit
+from numba import jit, prange
 import math
 
 import numpy as np
 
-from ._util import discretize_lander_geom, max_under_pad, pad_pix_locations
+from ._util import discretize_lander_geom, max_under_pad, pad_pix_locations, footprint_checker, cross_product, dot_product
 
 
 def dhd(
@@ -53,7 +53,7 @@ def dhd(
 
     # 2. generate slope and roughness map ################################
     xi_arr, yi_arr = pad_pix_locations(lander_type, s_radius2pad)
-    site_slope, site_rghns, pix_rghns = dem_slope_rghns(N_RLANDER, N_RPAD, lander_type, rmpp, negative_rghns_unsafe, xi_arr, yi_arr, x_arr, y_arr, dem, fpmap)
+    site_slope, site_rghns, pix_rghns = dem_slope_rghns(s_rlander, s_rpad, lander_type, rmpp, negative_rghns_unsafe, xi_arr, yi_arr, dem, fpmap)
 
     # make indefinite map
     indef = np.zeros_like(dem).astype(np.int)
@@ -71,8 +71,8 @@ def dhd(
     return fpmap, site_slope, site_rghns, pix_rghns, is_safe, indef
 
 
-def dem_slope_rghns(n_rlander: int, n_rpad: int, lander_type: str, rmpp: float, negative_rghns_unsafe:bool, 
-                    xi_arr: np.ndarray, yi_arr: np.ndarray, x_arr: np.ndarray, y_arr: np.ndarray, dem: np.ndarray, fpmap: np.ndarray):
+def dem_slope_rghns(s_rlander: int, s_rpad: int, lander_type: str, rmpp: float, negative_rghns_unsafe:bool, 
+                    xi_arr: np.ndarray, yi_arr: np.ndarray, dem: np.ndarray, fpmap: np.ndarray):
     """compute slope and roughness over the DEM
     Args:
         n_rlander: number of pixels to represent radius of lander
@@ -82,8 +82,6 @@ def dem_slope_rghns(n_rlander: int, n_rpad: int, lander_type: str, rmpp: float, 
         negative_rghns_unsafe: if True, negative roughness is considered as unsafe
         xi_arr: (n, 4), relative x pixel locations of landing pads
         yi_arr: (n, 4), relative y pixel locations of landing pads
-        x_arr: (n, 4), relative x locations of landing pads
-        y_arr: (n, 4), relative y locations of landing pads
         dem: (H x W), digital elevation map
         fpmap: (H x W), max values under landing pad for each pixel
     Returns:
@@ -101,8 +99,10 @@ def dem_slope_rghns(n_rlander: int, n_rpad: int, lander_type: str, rmpp: float, 
     pix_rghns = np.zeros_like(dem)
     pix_rghns[:] = -1
 
-    site_slope, site_rghns, pix_rghns = _dem_slope_rghns(nr, nc, nt, n_rlander, n_rpad, lander_type, rmpp, negative_rghns_unsafe,
-                                                        xi_arr, yi_arr, x_arr, y_arr, dem, fpmap,
+    footprint_mask = footprint_checker(lander_type, xi_arr, yi_arr, s_rlander)
+
+    site_slope, site_rghns, pix_rghns = _dem_slope_rghns(nr, nc, nt, s_rlander, s_rpad, lander_type, rmpp, negative_rghns_unsafe,
+                                                        xi_arr, yi_arr, footprint_mask, dem, fpmap,
                                                         site_slope, site_rghns, pix_rghns)
 
     pix_rghns[pix_rghns==-1] = np.nan
@@ -112,7 +112,7 @@ def dem_slope_rghns(n_rlander: int, n_rpad: int, lander_type: str, rmpp: float, 
 
 @jit(nopython=True, fastmath=True, nogil=True, cache=True, parallel=True)
 def _dem_slope_rghns(nr:int, nc:int, nt:int, s_rlander:int, s_rpad: int, lander_type:str, rmpp:float, negative_rghns_unsafe: bool,
-                     xi_arr:np.ndarray, yi_arr:np.ndarray, dem:np.ndarray, fpmap:np.ndarray, 
+                     xi_arr:np.ndarray, yi_arr:np.ndarray, footprint_mask:np.ndarray, dem:np.ndarray, fpmap:np.ndarray, 
                      site_slope:np.ndarray, site_rghns:np.ndarray, pix_rghns:np.ndarray):
     """
     Args:
@@ -198,24 +198,12 @@ def _dem_slope_rghns(nr:int, nc:int, nt:int, s_rlander:int, s_rpad: int, lander_
                                 slope = slope_th
 
                             # 2. find maximum roughness for dem[i, j] for all theta
-                            for i in prange(-n_rlander + (n_rpad*2 + 1), n_rlander - (n_rpad*2 + 1) + 1):
-                                for j in prange(-n_rlander + (n_rpad*2 + 1), n_rlander - (n_rpad*2 + 1) + 1):
-                                    xp = i * rmpp
-                                    yp = j * rmpp
-
-                                    cond1 = inside_line(xp, yp, top_x, top_y, left_x, left_y)
-                                    cond2 = inside_line(xp, yp, left_x, left_y, bottom_x, bottom_y)
-                                    cond3 = inside_line(xp, yp, bottom_x, bottom_y, right_x, right_y)
-                                    cond4 = inside_line(xp, yp, right_x, right_y, top_x, top_y)
-                                    cond5 = inside_line(xp, yp, right_x, right_y, left_x, left_y)
-
-                                    if lander_type=="triangle":
-                                        within_footprint = (cond2 and cond3 and cond5)
-                                    else:
-                                        within_footprint = (cond1 and cond2 and cond3 and cond4)
-
-                                    if within_footprint:
-                                        zp = dem[xi + i, yi + j]
+                            for i in prange(2 * s_rlander + 1):
+                                for j in prange(2 * s_rlander + 1):
+                                    if footprint_mask[ti, i, j]:
+                                        zp = dem[xi + i - s_rlander, yi + j - s_rlander]
+                                        xp = (i - s_rlander) * rmpp
+                                        yp = (j - s_rlander) * rmpp
 
                                         # if NaN, set roughness to NaN
                                         if math.isnan(zp):
@@ -231,8 +219,9 @@ def _dem_slope_rghns(nr:int, nc:int, nt:int, s_rlander:int, s_rpad: int, lander_
                                                 rghns = rghns_th_ij
                                             
                                             # update pixel roughness with the largest one
-                                            if rghns_th_ij > pix_rghns[xi + i, yi + j]:
-                                                pix_rghns[xi + i, yi + j] = rghns_th_ij
+                                            if rghns_th_ij > pix_rghns[xi + i - s_rlander, yi + j - s_rlander]:
+                                                pix_rghns[xi + i - s_rlander, yi + j - s_rlander] = rghns_th_ij
+
                 # 3. substitution
                 if slope == -1:
                     slope = math.nan
