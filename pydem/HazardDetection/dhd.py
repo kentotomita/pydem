@@ -54,7 +54,7 @@ def dhd(
 
     # 2. generate slope and roughness map ################################
     xi_arr, yi_arr = pad_pix_locations(lander_type, s_radius2pad)
-    site_slope, site_rghns, pix_rghns = dem_slope_rghns(s_rlander, s_rpad, lander_type, rmpp, negative_rghns_unsafe, xi_arr, yi_arr, dem, fpmap)
+    site_slope, site_rghns, pix_rghns = dem_slope_rghns(s_rlander, lander_type, rmpp, negative_rghns_unsafe, xi_arr, yi_arr, dem, fpmap)
 
     # make indefinite map
     indef = np.zeros_like(dem).astype(np.int)
