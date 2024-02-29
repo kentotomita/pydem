@@ -8,7 +8,8 @@ import math
 
 import numpy as np
 
-from ._util import discretize_lander_geom, max_under_pad, pad_pix_locations, footprint_checker, cross_product, dot_product
+from ._util import (discretize_lander_geom, max_under_pad, pad_pix_locations, 
+                    footprint_checker, cross_product, dot_product)
 
 
 def dhd(
@@ -71,8 +72,9 @@ def dhd(
     return fpmap, site_slope, site_rghns, pix_rghns, is_safe, indef
 
 
-def dem_slope_rghns(s_rlander: int, s_rpad: int, lander_type: str, rmpp: float, negative_rghns_unsafe:bool, 
-                    xi_arr: np.ndarray, yi_arr: np.ndarray, dem: np.ndarray, fpmap: np.ndarray):
+def dem_slope_rghns(s_rlander: int, lander_type: str, rmpp: float, 
+                    negative_rghns_unsafe:bool, xi_arr: np.ndarray, yi_arr: np.ndarray,
+                    dem: np.ndarray, fpmap: np.ndarray):
     """compute slope and roughness over the DEM
     Args:
         n_rlander: number of pixels to represent radius of lander
@@ -101,7 +103,7 @@ def dem_slope_rghns(s_rlander: int, s_rpad: int, lander_type: str, rmpp: float, 
 
     footprint_mask = footprint_checker(lander_type, xi_arr, yi_arr, s_rlander)
 
-    site_slope, site_rghns, pix_rghns = _dem_slope_rghns(nr, nc, nt, s_rlander, s_rpad, lander_type, rmpp, negative_rghns_unsafe,
+    site_slope, site_rghns, pix_rghns = _dem_slope_rghns(nr, nc, nt, s_rlander, lander_type, rmpp, negative_rghns_unsafe,
                                                         xi_arr, yi_arr, footprint_mask, dem, fpmap,
                                                         site_slope, site_rghns, pix_rghns)
 
@@ -111,7 +113,7 @@ def dem_slope_rghns(s_rlander: int, s_rpad: int, lander_type: str, rmpp: float, 
 
 
 @jit(nopython=True, fastmath=True, nogil=True, cache=True, parallel=True)
-def _dem_slope_rghns(nr:int, nc:int, nt:int, s_rlander:int, s_rpad: int, lander_type:str, rmpp:float, negative_rghns_unsafe: bool,
+def _dem_slope_rghns(nr:int, nc:int, nt:int, s_rlander:int, lander_type:str, rmpp:float, negative_rghns_unsafe: bool,
                      xi_arr:np.ndarray, yi_arr:np.ndarray, footprint_mask:np.ndarray, dem:np.ndarray, fpmap:np.ndarray, 
                      site_slope:np.ndarray, site_rghns:np.ndarray, pix_rghns:np.ndarray):
     """
@@ -120,7 +122,6 @@ def _dem_slope_rghns(nr:int, nc:int, nt:int, s_rlander:int, s_rpad: int, lander_
         nc: number of columns of dem   
         nt: number of landing orientations
         s_rlander: number of pixels to represent radius of lander
-        s_rpad: number of pixels to represent radius of landing pad
         lander_type: "triangle" or "square"
         rmpp: resolution (m/pix)
         negative_rghns_unsafe: if True, negative roughness is considered as unsafe
