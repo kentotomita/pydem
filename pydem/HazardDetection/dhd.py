@@ -53,8 +53,9 @@ def dhd(
     fpmap = max_under_pad(dp, s_rpad, dem, rmpp)
 
     # 2. generate slope and roughness map ################################
-    xi_arr, yi_arr = pad_pix_locations(lander_type, s_radius2pad)
-    site_slope, site_rghns, pix_rghns = dem_slope_rghns(s_rlander, lander_type, rmpp, negative_rghns_unsafe, xi_arr, yi_arr, dem, fpmap)
+    xi_arr, yi_arr, xy_arr = pad_pix_locations(lander_type, s_radius2pad, dl, dp)
+    site_slope, site_rghns, pix_rghns = dem_slope_rghns(s_rlander, lander_type, rmpp, negative_rghns_unsafe, 
+                                                        xi_arr, yi_arr, xy_arr, dem, fpmap)
 
     # make indefinite map
     indef = np.zeros_like(dem).astype(np.int)
@@ -72,8 +73,8 @@ def dhd(
     return fpmap, site_slope, site_rghns, pix_rghns, is_safe, indef
 
 
-def dem_slope_rghns(s_rlander: int, lander_type: str, rmpp: float, 
-                    negative_rghns_unsafe:bool, xi_arr: np.ndarray, yi_arr: np.ndarray,
+def dem_slope_rghns(s_rlander: int, lander_type: str, rmpp: float, negative_rghns_unsafe:bool, 
+                    xi_arr: np.ndarray, yi_arr: np.ndarray, xy_arr: np.ndarray,
                     dem: np.ndarray, fpmap: np.ndarray):
     """compute slope and roughness over the DEM
     Args:
@@ -104,7 +105,7 @@ def dem_slope_rghns(s_rlander: int, lander_type: str, rmpp: float,
     footprint_mask = footprint_checker(lander_type, xi_arr, yi_arr, s_rlander)
 
     site_slope, site_rghns, pix_rghns = _dem_slope_rghns(nr, nc, nt, s_rlander, lander_type, rmpp, negative_rghns_unsafe,
-                                                        xi_arr, yi_arr, footprint_mask, dem, fpmap,
+                                                        xi_arr, yi_arr, xy_arr, footprint_mask, dem, fpmap,
                                                         site_slope, site_rghns, pix_rghns)
 
     pix_rghns[pix_rghns==-1] = np.nan
@@ -114,7 +115,7 @@ def dem_slope_rghns(s_rlander: int, lander_type: str, rmpp: float,
 
 @jit(nopython=True, fastmath=True, nogil=True, cache=True, parallel=True)
 def _dem_slope_rghns(nr:int, nc:int, nt:int, s_rlander:int, lander_type:str, rmpp:float, negative_rghns_unsafe: bool,
-                     xi_arr:np.ndarray, yi_arr:np.ndarray, footprint_mask:np.ndarray, dem:np.ndarray, fpmap:np.ndarray, 
+                     xi_arr:np.ndarray, yi_arr:np.ndarray, xy_arr:np.ndarray, footprint_mask:np.ndarray, dem:np.ndarray, fpmap:np.ndarray, 
                      site_slope:np.ndarray, site_rghns:np.ndarray, pix_rghns:np.ndarray):
     """
     Args:
@@ -133,6 +134,10 @@ def _dem_slope_rghns(nr:int, nc:int, nt:int, s_rlander:int, lander_type:str, rmp
         site_rghns: (H x W), roughness for each landing site
         pix_rghns: roughness for each pixel
     """
+    left_x, left_y = xy_arr[0]
+    bottom_x, bottom_y = xy_arr[1]
+    right_x, right_y = xy_arr[2]
+    top_x, top_y = xy_arr[3]
 
     for xi in prange(nr):
         for yi in prange(nc):
@@ -149,8 +154,9 @@ def _dem_slope_rghns(nr:int, nc:int, nt:int, s_rlander:int, lander_type:str, rmp
 
                     left_xi, bottom_xi, right_xi, top_xi = xi_arr[ti]
                     left_yi, bottom_yi, right_yi, top_yi = yi_arr[ti]
-                    left_x, bottom_x, right_x, top_x, = left_xi * rmpp, bottom_xi * rmpp, right_xi * rmpp, top_xi * rmpp
-                    left_y, bottom_y, right_y, top_y = left_yi * rmpp, bottom_yi * rmpp, right_yi * rmpp, top_yi * rmpp
+
+                    #left_x, bottom_x, right_x, top_x, = left_xi * rmpp, bottom_xi * rmpp, right_xi * rmpp, top_xi * rmpp
+                    #left_y, bottom_y, right_y, top_y = left_yi * rmpp, bottom_yi * rmpp, right_yi * rmpp, top_yi * rmpp
 
                     # get height of each landing pad
                     left_z = fpmap[xi + left_xi, yi + left_yi]  # height of left landing pad

@@ -63,7 +63,7 @@ def _max_under_pad(h:int, w:int, s_rpad:int, pad_mask: np.ndarray, dem:np.ndarra
             if xi >= s_rpad and xi < h - s_rpad and yi >= s_rpad and yi < w - s_rpad:
 
                 # find max under circular landing pad
-                val = -1
+                val = -np.inf
                 for i in prange(2 * s_rpad + 1):
                     for j in prange(2 * s_rpad + 1):
                         if pad_mask[i, j] == 1:
@@ -75,7 +75,7 @@ def _max_under_pad(h:int, w:int, s_rpad:int, pad_mask: np.ndarray, dem:np.ndarra
     return fpmap
 
 
-def pad_pix_locations(lander_type:str, s_radius2pad: float):
+def pad_pix_locations(lander_type:str, s_radius2pad: float, dl: float, dp: float):
     """Return the list of relative locations (pix) of landing pads
     Args:
         lander_type: "triangle" or "square"
@@ -88,6 +88,7 @@ def pad_pix_locations(lander_type:str, s_radius2pad: float):
     # x (axis 0)
 
     assert lander_type == "triangle" or lander_type == "square"
+    R = (dl - dp) / 2
 
     circle_points = midpoint_circle(s_radius2pad)
     x_base = circle_points[:, 0]
@@ -96,6 +97,7 @@ def pad_pix_locations(lander_type:str, s_radius2pad: float):
     n = len(circle_points)
     xi_arr = np.zeros(shape=(n, 4)).astype(np.int32)
     yi_arr = np.zeros(shape=(n, 4)).astype(np.int32)
+    xy_arr = np.zeros(shape=(4, 2)).astype(np.float32)
 
     if lander_type=="triangle":
         # pad 0: left pad
@@ -114,6 +116,10 @@ def pad_pix_locations(lander_type:str, s_radius2pad: float):
         yi_arr[:, 0] = y_base
         yi_arr[:, 1] = np.roll(y_base, -step)
         yi_arr[:, 2] = np.roll(y_base, -2*step)
+
+        xy_arr[0] = 0.0, -R
+        xy_arr[1] = R * np.cos(np.pi / 3), R * np.sin(np.pi / 3)
+        xy_arr[2] = R * np.cos(2 * np.pi / 3), -R * np.sin(2 *np.pi / 3)
 
     elif lander_type=="square":
         # pad 0: left pad;   (sin(th),        cos(th + pi))   = (sin(th), -cos(th)) 
@@ -135,10 +141,15 @@ def pad_pix_locations(lander_type:str, s_radius2pad: float):
         yi_arr[:, 2] = np.roll(y_base, -2*step)
         yi_arr[:, 3] = np.roll(y_base, -3*step)
 
+        xy_arr[0] = 0.0, -R
+        xy_arr[1] = R, 0.0
+        xy_arr[2] = 0.0, R
+        xy_arr[3] = -R, 0.0
+
     else:
         raise ValueError("Invalid lander_type")
 
-    return xi_arr, yi_arr
+    return xi_arr, yi_arr, xy_arr
 
 
 @jit(nopython=True, fastmath=True, nogil=True, cache=True)
