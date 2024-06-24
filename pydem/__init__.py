@@ -1,3 +1,10 @@
+from numba.core.errors import NumbaDeprecationWarning, NumbaPendingDeprecationWarning
+import warnings
+
+warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
+warnings.simplefilter('ignore', category=NumbaPendingDeprecationWarning)
+
+
 # Hard dependencies ----------------------------------------------------------- #
 # Let users know if they're missing any of our hard dependencies
 hard_dependencies = ("numpy", "numba", 'scipy', 'matplotlib')
