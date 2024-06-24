@@ -8,6 +8,7 @@ import math
 from math import erf, sqrt
 import numpy as np
 
+from . import INT
 from ._util import (discretize_lander_geom, max_under_pad, pad_pix_locations, 
                     footprint_checker, cross_product, dot_product)
 
@@ -60,12 +61,12 @@ def alhat(
                                                       dem, fpmap)
     
     # make indefinite map
-    indef = np.zeros_like(dem).astype(np.int)
+    indef = np.zeros_like(dem).astype(INT)
     indef[np.isnan(site_slope)] = 1
     indef[np.isnan(site_prsafe)] = 1
 
     # make safety map
-    psafe =  np.zeros_like(dem).astype(np.int)
+    psafe =  np.zeros_like(dem).astype(INT)
     psafe[:] = 1
     psafe[(site_slope > scrit)] = 0
     psafe = psafe * site_prsafe

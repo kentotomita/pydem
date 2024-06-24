@@ -11,6 +11,7 @@ import numpy as np
 from ._util import (discretize_lander_geom, max_under_pad, pad_pix_locations, 
                     footprint_checker, cross_product, dot_product)
 
+from . import INT
 
 def dhd(
     dem: np.ndarray,
@@ -58,12 +59,12 @@ def dhd(
                                                         xi_arr, yi_arr, xy_arr, dem, fpmap)
 
     # make indefinite map
-    indef = np.zeros_like(dem).astype(np.int)
+    indef = np.zeros_like(dem).astype(INT)
     indef[np.isnan(site_slope)] = 1
     indef[np.isnan(site_rghns)] = 1
 
     # make safety map
-    is_safe =  np.zeros_like(dem).astype(np.int)
+    is_safe =  np.zeros_like(dem).astype(INT)
     is_safe[(site_slope < scrit) * (site_rghns < rcrit)] = 1
     is_safe[indef == 1] = 0
     if verbose:

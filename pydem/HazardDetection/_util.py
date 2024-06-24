@@ -1,9 +1,9 @@
 """Utility functions for Hazard Detection module."""
 
 import numpy as np
-import math
 from numba import njit, jit, prange
 
+from . import INT, FLOAT
 
 @jit
 def discretize_lander_geom(dl: float, dp: float, rmpp: float):
@@ -48,7 +48,7 @@ def max_under_pad(dp:float, s_rpad: int, dem: np.ndarray, rmpp: float) -> np.nda
     return fpmap + zmin
 
 
-@jit(nopython=True, fastmath=True, nogil=True, cache=True, parallel=True)
+@njit(fastmath=True, nogil=True, cache=True, parallel=True)
 def _max_under_pad(h:int, w:int, s_rpad:int, pad_mask: np.ndarray, dem:np.ndarray, fpmap:np.ndarray):
     """Return max values under landing pad for each pixel. dem has to be >0.
     Args:
@@ -95,9 +95,9 @@ def pad_pix_locations(lander_type:str, s_radius2pad: float, dl: float, dp: float
     y_base = circle_points[:, 1]
 
     n = len(circle_points)
-    xi_arr = np.zeros(shape=(n, 4)).astype(np.int32)
-    yi_arr = np.zeros(shape=(n, 4)).astype(np.int32)
-    xy_arr = np.zeros(shape=(4, 2)).astype(np.float32)
+    xi_arr = np.zeros(shape=(n, 4)).astype(INT)
+    yi_arr = np.zeros(shape=(n, 4)).astype(INT)
+    xy_arr = np.zeros(shape=(4, 2)).astype(FLOAT)
 
     if lander_type=="triangle":
         # pad 0: left pad
@@ -152,13 +152,13 @@ def pad_pix_locations(lander_type:str, s_radius2pad: float, dl: float, dp: float
     return xi_arr, yi_arr, xy_arr
 
 
-@jit(nopython=True, fastmath=True, nogil=True, cache=True)
+@njit(fastmath=True, nogil=True, cache=True)
 def round2int(val: float) -> int:
     """Round to the nearest integer"""
     return int(round(val))
 
 
-@jit(nopython=True, fastmath=True, nogil=True, cache=True)
+@njit(fastmath=True, nogil=True, cache=True)
 def inside_line(x, y, x0, y0, x1, y1):
     """Return True if (x, y) is on the left of the line connecting from (x0, y0) to (x1, y1)"""
     v0x = x - x0
@@ -170,7 +170,7 @@ def inside_line(x, y, x0, y0, x1, y1):
     return v2z > 0  # if True, (x,y) is located to the left of the line from (x0, y0) to (x1, y1)
 
 
-@jit(nopython=True, fastmath=True, nogil=True, cache=True)
+@njit(fastmath=True, nogil=True, cache=True)
 def cross_product(v1x, v1y, v1z, v2x, v2y, v2z):
     """Return cross product of v1 and v2"""
     v3x = v1y * v2z - v1z * v2y
@@ -179,13 +179,13 @@ def cross_product(v1x, v1y, v1z, v2x, v2y, v2z):
     return v3x, v3y, v3z
 
 
-@jit(nopython=True, fastmath=True, nogil=True, cache=True)
+@njit(fastmath=True, nogil=True, cache=True)
 def dot_product(v1x, v1y, v1z, v2x, v2y, v2z):
     """Return dot product of v1 and v2"""
     return v1x * v2x + v1y * v2y + v1z * v2z
 
 
-@jit(nopython=True, fastmath=True, nogil=True, cache=True)
+@njit(fastmath=True, nogil=True, cache=True)
 def point_closest2origin(x: float, y: float, res: float):
     """Return the closes point to the origin (0, 0) within the pixel located whose center is at (x, y) and has resolution res.
     
@@ -218,7 +218,7 @@ def point_closest2origin(x: float, y: float, res: float):
     return x + x_closest, y + y_closest
 
 
-@jit(nopython=True, fastmath=True, nogil=True, cache=True)
+@njit(fastmath=True, nogil=True, cache=True)
 def pixels_overlap_disk(diameter: float, res: float):
     """Create a disk mask; 1 if the pixel has overlap with the disk, 0 otherwise.
     The pixel diameter is set odd.
