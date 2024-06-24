@@ -5,12 +5,11 @@ The algorithm is based on [ALHAT](https://arc.aiaa.org/doi/pdf/10.2514/6.2013-50
 
 from numba import jit, prange, float64, njit
 import math
-from math import erf, sqrt, pi
-from scipy.special import ndtr
+from math import erf, sqrt
 import numpy as np
 
-from ._util import max_under_pad, pad_pix_locations, cross_product, dot_product, inside_line
-
+from ._util import (discretize_lander_geom, max_under_pad, pad_pix_locations, 
+                    footprint_checker, cross_product, dot_product)
 
 
 def alhat(
@@ -22,8 +21,6 @@ def alhat(
     scrit: float = 10 * np.pi / 180,
     rcrit: float = 0.2,
     sigma: float = 0.05/3,  # 5cm in 3-sigma; standard deviation of DEM noise
-    k = 1.0,
-    thstep: float = 10 * np.pi / 180,
     verbose: int = 0
 ):
     """Probabilistic Hazard Detection (PHD) algorithm for safety map generation.
@@ -47,21 +44,20 @@ def alhat(
     """
     assert lander_type == "triangle" or lander_type == "square"
 
-    N_RPAD = int((dp / 2) / rmpp)  # number of pixels for radius of the landing pad; floor
-    N_RLANDER = int((dl / 2) / rmpp)  # number of pixels for radius of lander; floor
+    s_rlander, s_rpad, s_radius2pad = discretize_lander_geom(dl, dp, rmpp)
     if verbose:
-        print("pad radius (px):", N_RPAD)
-        print("lander radius (px):", N_RLANDER)
+        print("lander radius (pix):", s_rlander)
+        print("pad radius (pix):", s_rpad)
 
     # 1. generate foot pad map #############################
     # prep foot pad map
-    fpmap = max_under_pad(N_RPAD, dem)
+    fpmap = max_under_pad(dp, s_rpad, dem, rmpp)
 
     # 2. generate slope and roughness map ################################
-    theta_arr = np.arange(0, np.pi * 2, thstep)
-    xi_arr, yi_arr, x_arr, y_arr = pad_pix_locations(theta_arr, lander_type, rmpp, N_RLANDER, N_RPAD)
-    site_slope, site_prsafe, pix_prsafe = psafe_alhat(N_RLANDER, N_RPAD, lander_type, rmpp, sigma, k, rcrit,
-                                                    xi_arr, yi_arr, x_arr, y_arr, dem, fpmap)
+    xi_arr, yi_arr = pad_pix_locations(lander_type, s_radius2pad)
+    site_slope, site_prsafe, pix_prsafe = psafe_alhat(s_rlander, lander_type, rmpp,
+                                                      sigma, rcrit, xi_arr, yi_arr,
+                                                      dem, fpmap)
     
     # make indefinite map
     indef = np.zeros_like(dem).astype(np.int)
@@ -81,8 +77,9 @@ def alhat(
     return fpmap, site_slope, site_prsafe, pix_prsafe, psafe, indef
 
 
-def psafe_alhat(n_rlander: int, n_rpad: int, lander_type: str, rmpp: float, sigma:float, k:float, rcrit:float,
-                xi_arr: np.ndarray, yi_arr: np.ndarray, x_arr: np.ndarray, y_arr: np.ndarray, dem: np.ndarray, fpmap: np.ndarray):
+def psafe_alhat(s_rlander: int, lander_type: str, rmpp: float,
+                sigma:float, rcrit:float, xi_arr: np.ndarray, yi_arr: np.ndarray, 
+                dem: np.ndarray, fpmap: np.ndarray):
     """compute slope and roughness over the DEM
     """
     nr, nc = dem.shape
@@ -95,8 +92,12 @@ def psafe_alhat(n_rlander: int, n_rpad: int, lander_type: str, rmpp: float, sigm
     pix_prsafe = np.zeros_like(dem)
     pix_prsafe[:] = 2
 
-    site_slope, site_prsafe, pix_prsafe = _psafe_alhat(nr, nc, nt, n_rlander, n_rpad, lander_type, rmpp, sigma, k, rcrit,
-                                                       xi_arr, yi_arr, x_arr, y_arr, dem, fpmap, site_slope, site_prsafe, pix_prsafe)
+    footprint_mask = footprint_checker(lander_type, xi_arr, yi_arr, s_rlander)
+
+    site_slope, site_prsafe, pix_prsafe = _psafe_alhat(nr, nc, nt, s_rlander, lander_type, 
+                                                       rmpp, sigma, rcrit,
+                                                       xi_arr, yi_arr, footprint_mask, dem, fpmap,
+                                                       site_slope, site_prsafe, pix_prsafe)
     
     pix_prsafe[pix_prsafe==2] = np.nan
 
@@ -104,23 +105,22 @@ def psafe_alhat(n_rlander: int, n_rpad: int, lander_type: str, rmpp: float, sigm
 
 
 @jit(nopython=True, fastmath=True, nogil=True, cache=True, parallel=True)
-def _psafe_alhat(nr:int, nc:int, nt:int, n_rlander:int, n_rpad: int, lander_type:str, rmpp:float, sigma: float, k:float, rcrit:float,
-           xi_arr:np.ndarray, yi_arr:np.ndarray, x_arr:np.ndarray, y_arr:np.ndarray, dem:np.ndarray, fpmap:np.ndarray, 
-           site_slope:np.ndarray, site_prsafe:np.ndarray, pix_prsafe:np.ndarray):
+def _psafe_alhat(nr:int, nc:int, nt:int, s_rlander:int, lander_type:str, 
+                 rmpp:float, sigma: float, rcrit:float, xi_arr:np.ndarray,
+                 yi_arr:np.ndarray, footprint_mask: np.ndarray, dem:np.ndarray, fpmap:np.ndarray, 
+                 site_slope:np.ndarray, site_prsafe:np.ndarray, pix_prsafe:np.ndarray):
     """
     Args:
         nr: number of rows of dem
         nc: number of columns of dem   
         nt: number of landing orientations
-        n_rlander: number of pixels to represent radius of lander
-        n_rpad: number of pixels to represent radius of landing pad
+        s_rlander: number of pixels to represent radius of lander
+        s_rpad: number of pixels to represent radius of landing pad
         lander_type: "triangle" or "square"
         rmpp: resolution (m/pix)
         negative_rghns_unsafe: if True, negative roughness is considered as unsafe
         xi_arr: (n, 4), relative x pixel locations of landing pads
         yi_arr: (n, 4), relative y pixel locations of landing pads
-        x_arr: (n, 4), relative x locations of landing pads
-        y_arr: (n, 4), relative y locations of landing pads
         dem: (H x W), digital elevation map
         fpmap: (H x W), max values under landing pad for each pixel
         site_slope: (H x W), slope (rad) for each landing site
@@ -132,7 +132,7 @@ def _psafe_alhat(nr:int, nc:int, nt:int, n_rlander:int, n_rpad: int, lander_type
         for yi in prange(nc):
 
             # pixels close to edge cannot be evaluated
-            if xi >= n_rlander and xi < nr - n_rlander and yi >= n_rlander and yi < nc - n_rlander:
+            if xi >= s_rlander and xi < nr - s_rlander and yi >= s_rlander and yi < nc - s_rlander:
 
                 # Below, we use a coordinate system whose origin is located at (xi, yi, 0) in dem coordinate.
                 # 1. find max slope for dem[xi, yi]
@@ -143,8 +143,8 @@ def _psafe_alhat(nr:int, nc:int, nt:int, n_rlander:int, n_rpad: int, lander_type
 
                     left_xi, bottom_xi, right_xi, top_xi = xi_arr[ti]
                     left_yi, bottom_yi, right_yi, top_yi = yi_arr[ti]
-                    left_x, bottom_x, right_x, top_x, = x_arr[ti]
-                    left_y, bottom_y, right_y, top_y = y_arr[ti]
+                    left_x, bottom_x, right_x, top_x, = left_xi * rmpp, bottom_xi * rmpp, right_xi * rmpp, top_xi * rmpp
+                    left_y, bottom_y, right_y, top_y = left_yi * rmpp, bottom_yi * rmpp, right_yi * rmpp, top_yi * rmpp
 
                     # get height of each landing pad
                     left_z = fpmap[xi + left_xi, yi + left_yi]  # height of left landing pad
@@ -172,7 +172,7 @@ def _psafe_alhat(nr:int, nc:int, nt:int, n_rlander:int, n_rpad: int, lander_type
                     # If the dot product with [a,b,c] is larger than -d, the point is above the plane.
 
                     slope_th = abs(math.acos(c))  # slope (rad) for theta
-                    prsafe_th = 1  # initialize probability of safety for theta
+                    prsafe = 1  # initialize probability of safety for theta
 
                     # if any of the landing pad has an height of NaN, set slope to NaN
                     if math.isnan(top_z) or math.isnan(left_z) or math.isnan(bottom_z) or math.isnan(right_z):
@@ -188,24 +188,12 @@ def _psafe_alhat(nr:int, nc:int, nt:int, n_rlander:int, n_rpad: int, lander_type
                                 slope = slope_th
 
                             # 2. find maximum roughness for dem[i, j] for all theta
-                            for i in prange(-n_rlander + (n_rpad*2 + 1), n_rlander - (n_rpad*2 + 1) + 1):
-                                for j in prange(-n_rlander + (n_rpad*2 + 1), n_rlander - (n_rpad*2 + 1) + 1):
-                                    xp = i * rmpp
-                                    yp = j * rmpp
-
-                                    cond1 = inside_line(xp, yp, top_x, top_y, left_x, left_y)
-                                    cond2 = inside_line(xp, yp, left_x, left_y, bottom_x, bottom_y)
-                                    cond3 = inside_line(xp, yp, bottom_x, bottom_y, right_x, right_y)
-                                    cond4 = inside_line(xp, yp, right_x, right_y, top_x, top_y)
-                                    cond5 = inside_line(xp, yp, right_x, right_y, left_x, left_y)
-
-                                    if lander_type=="triangle":
-                                        within_footprint = (cond2 and cond3 and cond5)
-                                    else:
-                                        within_footprint = (cond1 and cond2 and cond3 and cond4)
-
-                                    if within_footprint:
-                                        zp = dem[xi + i, yi + j]
+                            for i in prange(2 * s_rlander + 1):
+                                for j in prange(2 * s_rlander + 1):
+                                    if footprint_mask[ti, i, j]:
+                                        zp = dem[xi + i - s_rlander, yi + j - s_rlander]
+                                        xp = (i - s_rlander) * rmpp
+                                        yp = (j - s_rlander) * rmpp
 
                                         # if NaN, set roughness to NaN
                                         if math.isnan(zp):
@@ -214,12 +202,17 @@ def _psafe_alhat(nr:int, nc:int, nt:int, n_rlander:int, n_rpad: int, lander_type
                                             rghns_th_ij = a * xp + b * yp + c * zp + d
                                             prsafe_th_ij = cdf(rcrit, rghns_th_ij, c*sigma)
                                         
-                                        prsafe_th = prsafe_th * prsafe_th_ij  # Eq. (13) in ALHAT paper
+                                        #prsafe_th = prsafe_th * prsafe_th_ij  # Eq. (13) in ALHAT paper
 
-                                        if pix_prsafe[xi + i, yi + j] > prsafe_th_ij:
-                                            pix_prsafe[xi + i, yi + j] = prsafe_th_ij
-                    if k * prsafe_th < prsafe:
-                        prsafe = k * prsafe_th  # k defined in Eq. (1) in ALHAT paper
+                                        # update prsafe with the smallest one
+                                        if prsafe_th_ij < prsafe:
+                                            prsafe = prsafe_th_ij
+
+                                        # update pixel roughness safety with the smallest one
+                                        
+                                        if prsafe_th_ij < pix_prsafe[xi + i - s_rlander, yi + j - s_rlander]:
+                                            pix_prsafe[xi + i - s_rlander, yi + j - s_rlander] = prsafe_th_ij
+                
                 # 3. substitution
                 if slope == -1:
                     slope = math.nan

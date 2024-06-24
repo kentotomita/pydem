@@ -156,13 +156,23 @@ def gen_rock(diameter, res, a=1, b=1, theta=np.pi/6):
         z_grid(np.ndarray): heigh map of rock
         N(int): pixel size of the height map
     """
+    if diameter < res:
+        print("rock diameter is smaller than resolution")
+        return np.zeros(shape=(1, 1), dtype=np.float32), 1
+
     R = diameter / 2
-    N = max(int(diameter/res), 1)
+
+    # add one pixel to the edge so that the effective diameter is N-2 pixels
+    if diameter % res != 0:
+        N = int(diameter // res) + 1
+    else:
+        N = int(diameter // res)
+    
     z_grid = np.zeros(shape=(N, N), dtype=np.float32)
 
     span = R
-    x_vec = np.linspace(-span, span, N)
-    y_vec = np.linspace(-span, span, N)
+    x_vec = np.linspace(-span, span, N + 2)[1:-1]
+    y_vec = np.linspace(-span, span, N + 2)[1:-1]
     for i in range(N):
         for j in range(N):
             x = x_vec[i]
