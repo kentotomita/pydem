@@ -23,7 +23,6 @@ def rocky_terrain(shape, res=0.1, k=0.4, dmax=2, dmin=0.2, rng=None, verbose=0):
     else:
         # get list of diameters and numbers of rocks
         ds, ns = _get_size_num(area, k, dmax, dmin)
-        #ns = [1]
         if verbose > 0:
             print("list of diameters: ", ds)
             print("list of numbers: ", ns)
