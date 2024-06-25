@@ -2,7 +2,7 @@ import numpy as np
 from numba import jit, njit
 
 
-def rocky_terrain(shape, res=0.1, k=0.4, dmax=2, dmin=0.2, rng=None):
+def rocky_terrain(shape, res=0.1, k=0.4, dmax=2, dmin=0.2, rng=None, verbose=0):
     """
     Args:
         shape (tuple): shape of terrain array
@@ -23,6 +23,10 @@ def rocky_terrain(shape, res=0.1, k=0.4, dmax=2, dmin=0.2, rng=None):
     else:
         # get list of diameters and numbers of rocks
         ds, ns = _get_size_num(area, k, dmax, dmin)
+        #ns = [1]
+        if verbose > 0:
+            print("list of diameters: ", ds)
+            print("list of numbers: ", ns)
 
         # number of pixels of maximum rock
         ndmax = np.ceil(dmax / res).astype(np.int32)
@@ -99,7 +103,7 @@ def _get_size_num(area, k=0.4, dmax=2, dmin=0.2):
     """
 
     # num of diameters to consider
-    n_type = 5 * max(int(np.log10(dmax / dmin)), 1)
+    n_type = max(int(np.log10(dmax / dmin)), 1)
 
     # get list of diameters
     d_list = np.zeros(shape=(n_type,))
