@@ -247,7 +247,8 @@ def pixels_overlap_disk(diameter: float, res: float):
 
 
 def midpoint_circle(radius: int):
-    """Return a list of points on the rasterized circle with the given radius.
+    """Return a list of points on the rasterized circle with the given radius. 
+    The center of the circle is set (0, 0).
     Args:
         radius: radius of the circle (pix)
 
