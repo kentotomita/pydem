@@ -2,7 +2,7 @@ import numpy as np
 from numba import jit, njit
 
 
-def rocky_terrain(shape, res=0.1, k=0.4, dmax=2, dmin=0.2, rng=None, verbose=0):
+def rocky_terrain(shape, res=0.1, k=0.4, dmax=2, dmin=0.2, rng=None, debug=False):
     """
     Args:
         shape (tuple): shape of terrain array
@@ -22,10 +22,8 @@ def rocky_terrain(shape, res=0.1, k=0.4, dmax=2, dmin=0.2, rng=None, verbose=0):
         terrain = np.zeros(shape=shape, dtype=np.float32)
     else:
         # get list of diameters and numbers of rocks
-        ds, ns = _get_size_num(area, k, dmax, dmin)
-        if verbose > 0:
-            print("list of diameters: ", ds)
-            print("list of numbers: ", ns)
+        ds, ns = _get_size_num(area=area, k=k, dmax=dmax, dmin=dmin, d_step=0.2, debug=debug)
+        print(ds, ns)
 
         # number of pixels of maximum rock
         ndmax = np.ceil(dmax / res).astype(np.int32)
@@ -89,7 +87,7 @@ def _place_rocks(shape, res, d_list, n_list, loc, params):
 
 
 @jit
-def _get_size_num(area, k=0.4, dmax=2, dmin=0.2):
+def _get_size_num(area, k=0.4, dmax=2, dmin=0.2, d_step=0.2, debug=False):
     """
     Args:
         area (float): area of terrain (m^2)
@@ -101,31 +99,31 @@ def _get_size_num(area, k=0.4, dmax=2, dmin=0.2):
         n_list(np.ndarray): list of numbers for each diameter
     """
 
-    # num of diameters to consider
-    n_type = max(int(np.log10(dmax / dmin)), 1)
-
     # get list of diameters
-    d_list = np.zeros(shape=(n_type,))
-    for i in range(n_type):
-        d_list[i] = dmax * 10 ** (-0.1*i)
+    d_list_tmp = np.arange(dmax, dmin - d_step, -d_step)  # list of diameters [m] (from large to small)
 
-    # list of cumulative area covered by rocks of a given diameter D [m] or larger
-    f_list = np.zeros(shape=(n_type,))
-    for i in range(n_type):
-        f_list[i] = _F(k, d_list[i])
+    d_list = []
+    n_list = []
+    area_coverage_rate = 0.0
 
-    # list of g(d); area covered by rocks whose diameter is d m
-    g_list = np.zeros(shape=(n_type,))
-    for i in range(n_type):
-        if i == 0:
-            g_list[0] = f_list[i]
-        else:
-            g_list[i] = f_list[i] - f_list[i - 1]
+    for d in d_list_tmp:
+        f = _F(k, d)  # cumulative area (rate) covered by rocks of a given diameter D [m] or larger
+        g = (f - area_coverage_rate) * area  # area covered by rocks whose diameter is d m
+        rock_footprint = np.pi * (d / 2) ** 2  # footprint of a rock
+        n = int(g / rock_footprint)  # number of rocks whose diameter is d m; ceil(g / rock_footprint)
+        if n > 0:
+            d_list.append(d)
+            n_list.append(n)
+            area_coverage_rate += (n * np.pi * (d / 2) ** 2) / area
 
-    # list of number of rocks for each sizes
-    n_list = np.zeros(shape=(n_type,)).astype(np.int32)
-    for i in range(n_type):
-        n_list[i] = int(area * g_list[i] / (d_list[i] ** 2 * np.pi / 4))
+    if debug:
+        print("list of diameters: ", d_list)
+        print("list of numbers: ", n_list)
+        area_covered = 0.0
+        for i in range(len(d_list)):
+            area_covered += n_list[i] * np.pi * (d_list[i] / 2) ** 2
+        print("area covered by rocks: ", area_covered)
+        print("coverage rate: ", area_covered / area)
 
     return d_list, n_list
 
@@ -134,14 +132,21 @@ def _get_size_num(area, k=0.4, dmax=2, dmin=0.2):
 def _F(k, D):
     """
     cumulative area covered by rocks of a given diameter D [m] or larger
+
+    "the fraction of surface covered by rocks with diameters equal to or greater than some value D" in the reference.
+
     Args:
         D: Diameter
-        k: coverage rate
+        k: total rock coverage; cumulative fraction of surface covered by rocks of all sizes
+
+    Reference:
+        p4126 of 
+        Golombek, M., and Don Rapp. "Size‐frequency distributions of rocks on Mars and Earth analog sites: Implications for future landed missions." Journal of Geophysical Research: Planets 102.E2 (1997): 4117-4129.
     """
     if k == 0:
         f = 0
     else:
-        q = 1.863 + 0.153 / k
+        q = 1.79 + 0.152 / k
         f = k * np.exp(-q * D)
     return f
 
