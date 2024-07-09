@@ -23,7 +23,6 @@ def rocky_terrain(shape, res=0.1, k=0.4, dmax=2, dmin=0.2, rng=None, debug=False
     else:
         # get list of diameters and numbers of rocks
         ds, ns = _get_size_num(area=area, k=k, dmax=dmax, dmin=dmin, d_step=0.2, debug=debug)
-        print(ds, ns)
 
         # number of pixels of maximum rock
         ndmax = np.ceil(dmax / res).astype(np.int32)
