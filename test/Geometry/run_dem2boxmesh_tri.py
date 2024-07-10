@@ -11,7 +11,7 @@ if __name__=="__main__":
 
     #dem = st.gen_crater(d=50, res=1)
     #dem = st.dsa(np.random.random(size=(128, 128)))
-    dem = st.rocky_terrain(shape=(128, 64), res=0.1, k=0.4, dmax=2., dmin=0.2)
+    dem = st.rocky_terrain(shape=(128, 64), res=0.1, k=0.4, dmax=2.0, dmin=0.2, debug=True)
 
     plt.imshow(dem)
     plt.show()

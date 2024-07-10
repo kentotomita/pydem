@@ -208,7 +208,7 @@ def _dem2boxmesh(xx, yy, zz):
     return vtc, tri
 
 
-#@jit(nopython=True, fastmath=True, nogil=True, cache=True, parallel=True)
+@jit
 def _make_boxtriangles(nr, nc, tri):
     """
     Args:
@@ -308,11 +308,11 @@ def _make_boxtriangles(nr, nc, tri):
                 # d-g-h
                 tri[tid, :] = idd, idg, idh
                 tid += 1
-    return copy.deepcopy(tri)
+    return tri
 
 
 
-#@jit
+@jit
 def _make_boxvertices(nr, nc, xx, yy, zz, vtc):
     """
     Args:
@@ -417,6 +417,29 @@ def _make_boxvertices(nr, nc, xx, yy, zz, vtc):
             # vertex id for (a)
             #vid = xi * nc * 4 + yi * 4
 
+            # register vertices
+            # (a)
+            vtc[vid, 0] = xab
+            vtc[vid, 1] = yac
+            vtc[vid, 2] = z11
+            vid += 1
+            # (b)
+            vtc[vid, 0] = xab
+            vtc[vid, 1] = ybd
+            vtc[vid, 2] = z11
+            vid += 1
+            # (c)
+            vtc[vid, 0] = xcd
+            vtc[vid, 1] = yac
+            vtc[vid, 2] = z11   
+            vid += 1
+            # (d)
+            vtc[vid, 0] = xcd
+            vtc[vid, 1] = ybd
+            vtc[vid, 2] = z11
+            vid += 1
+
+            """
             vtc[vid, :] = xab, yac, z11  # register (a)
             vid += 1
             vtc[vid, :] = xab, ybd, z11  # register (b)
@@ -425,5 +448,6 @@ def _make_boxvertices(nr, nc, xx, yy, zz, vtc):
             vid += 1
             vtc[vid, :] = xcd, ybd, z11  # register (d)
             vid += 1
+            """
             
-    return copy.deepcopy(vtc)
+    return vtc
