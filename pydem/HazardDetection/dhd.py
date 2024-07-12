@@ -48,6 +48,7 @@ def dhd(
     if verbose:
         print("lander radius (pix):", s_rlander)
         print("pad radius (pix):", s_rpad)
+        print("radius to pad (pix):", s_radius2pad)
 
     # 1. generate foot pad map #############################
     # prep foot pad map
@@ -181,6 +182,7 @@ def _dem_slope_rghns(nr:int, nc:int, nt:int, s_rlander:int, lander_type:str, rmp
                     norm = np.sqrt(a ** 2 + b ** 2 + c ** 2)
                     if norm==0:
                         print("norm==0 detected")
+                        print(a, b, c)
                         print(ti)
                         print(xi_arr[ti])
                         print(yi_arr[ti])

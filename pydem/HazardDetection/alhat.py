@@ -55,7 +55,7 @@ def alhat(
     fpmap = max_under_pad(dp, s_rpad, dem, rmpp)
 
     # 2. generate slope and roughness map ################################
-    xi_arr, yi_arr = pad_pix_locations(lander_type, s_radius2pad)
+    xi_arr, yi_arr, _ = pad_pix_locations(lander_type, s_radius2pad, dl, dp)
     site_slope, site_prsafe, pix_prsafe = psafe_alhat(s_rlander, lander_type, rmpp,
                                                       sigma, rcrit, xi_arr, yi_arr,
                                                       dem, fpmap)

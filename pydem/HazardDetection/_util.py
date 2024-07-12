@@ -43,6 +43,10 @@ def max_under_pad(dp:float, s_rpad: int, dem: np.ndarray, rmpp: float) -> np.nda
     pad_mask, s_rpad_ = pixels_overlap_disk(dp, rmpp)
     assert s_rpad_ == s_rpad, "Landing pad diameter inconsistent"
 
+    if s_rpad==0:
+        print("Warning: landing pad diameter is too small to be represented in the DEM resolution. DEM is used as the footprint map.")
+        return dem + zmin
+    
     fpmap = _max_under_pad(dem.shape[0], dem.shape[1], s_rpad, pad_mask, dem, fpmap)
 
     return fpmap + zmin
