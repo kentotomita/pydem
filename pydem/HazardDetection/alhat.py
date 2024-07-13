@@ -22,7 +22,8 @@ def alhat(
     scrit: float = 10 * np.pi / 180,
     rcrit: float = 0.2,
     sigma: float = 0.05/3,  # 5cm in 3-sigma; standard deviation of DEM noise
-    verbose: int = 0
+    verbose: int = 0,
+    return_all: bool = False
 ):
     """Probabilistic Hazard Detection (PHD) algorithm for safety map generation.
     The algorithm is based on [ALHAT](https://arc.aiaa.org/doi/pdf/10.2514/6.2013-5019).
@@ -52,7 +53,7 @@ def alhat(
 
     # 1. generate foot pad map #############################
     # prep foot pad map
-    fpmap = max_under_pad(dp, s_rpad, dem, rmpp)
+    fpmap = max_under_pad(dp, s_rpad, dem, rmpp, verbose=verbose)
 
     # 2. generate slope and roughness map ################################
     xi_arr, yi_arr, _ = pad_pix_locations(lander_type, s_radius2pad, dl, dp)
@@ -75,6 +76,9 @@ def alhat(
         print("MAX SLOPE:    ", np.nanmax(site_slope))
         print("MIN P(ROUGHNESS SAFE):", np.nanmax(site_prsafe))
 
+    if return_all:
+        return fpmap, site_slope, site_prsafe, pix_prsafe, psafe, indef, s_rlander, s_rpad, s_radius2pad
+    
     return fpmap, site_slope, site_prsafe, pix_prsafe, psafe, indef
 
 
