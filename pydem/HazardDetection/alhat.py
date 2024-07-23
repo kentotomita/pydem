@@ -50,6 +50,7 @@ def alhat(
     if verbose:
         print("lander radius (pix):", s_rlander)
         print("pad radius (pix):", s_rpad)
+        print("radius to pad (pix):", s_radius2pad)
 
     # 1. generate foot pad map #############################
     # prep foot pad map
@@ -142,7 +143,7 @@ def _psafe_alhat(nr:int, nc:int, nt:int, s_rlander:int, lander_type:str,
                 # Below, we use a coordinate system whose origin is located at (xi, yi, 0) in dem coordinate.
                 # 1. find max slope for dem[xi, yi]
                 slope = -1
-                prsafe = 1
+                prsafe = 2
                 # loop over all landing orientations; angle theta (rad)
                 for ti in prange(nt):
 
@@ -177,7 +178,6 @@ def _psafe_alhat(nr:int, nc:int, nt:int, s_rlander:int, lander_type:str,
                     # If the dot product with [a,b,c] is larger than -d, the point is above the plane.
 
                     slope_th = abs(math.acos(c))  # slope (rad) for theta
-                    prsafe = 1  # initialize probability of safety for theta
 
                     # if any of the landing pad has an height of NaN, set slope to NaN
                     if math.isnan(top_z) or math.isnan(left_z) or math.isnan(bottom_z) or math.isnan(right_z):
