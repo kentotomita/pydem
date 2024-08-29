@@ -1,0 +1,9 @@
+numpy
+numba
+matplotlib
+scipy
+open3d
+pyglet
+pyvista
+trimesh[easy]
+pyembree
