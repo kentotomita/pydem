@@ -5,5 +5,6 @@ scipy
 open3d
 pyglet
 pyvista
+notebook
 trimesh[easy]
-pyembree
+pyembree==0.2.11
