@@ -7,4 +7,4 @@ pyglet
 pyvista
 notebook
 trimesh[easy]
-pyembree==0.2.11
+pyembree
