@@ -3,16 +3,16 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.8
+  - python=3.10.12
   - pip
-  - numpy
-  - numba
-  - matplotlib
   - pip:
+      - numpy
+      - numba
+      - matplotlib
+      - ipykernel
       - scipy
       - open3d
       - pyglet
       - pyvista
       - trimesh[easy]
       - pyembree
-
