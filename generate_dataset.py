@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pyvista as pv
 from scipy.interpolate import LinearNDInterpolator
+from numpy.random import RandomState
 import sys
 sys.path.append("./") # This is to access the pydem module
 
@@ -39,7 +40,7 @@ os.makedirs('./data/test/label/is_safe', exist_ok=True)
 
 for i in range(n_training):
     dem = st.rocky_terrain(shape=(nh, nw), res=res, k=0.1, dmax=1.5, dmin=0.1)
-    terrain = st.dsa(dem, hmax=0.7)
+    terrain = st.dsa(dem, hmax=0.7, rng=RandomState(i))
 
     
     dem_train = dem + gaussian_filter(terrain, sigma=2)
